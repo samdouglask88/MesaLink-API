@@ -317,3 +317,23 @@ create trigger trg_pedidos_cozinha_somente_status
 before update on public.pedidos
 for each row
 execute function public.pedidos_cozinha_somente_status();
+
+-- -----------------------------------------------------------------------------
+-- Privilégios de tabela para os papéis do Supabase.
+--
+-- Importante: RLS decide QUAIS linhas cada papel enxerga/altera, mas o GRANT
+-- abaixo é o privilégio BASE — sem ele o PostgREST rejeita com 42501
+-- ("permission denied for table") ANTES de a RLS sequer ser avaliada.
+--
+--   * service_role: acesso total (tem BYPASSRLS; é quem as Edge Functions usam).
+--   * authenticated (staff): CRUD, com a RLS restringindo por papel.
+--   * anon (cliente): só SELECT e INSERT, com a RLS restringindo pelo token.
+-- -----------------------------------------------------------------------------
+grant usage on schema public to anon, authenticated, service_role;
+
+grant all privileges on all tables    in schema public to service_role;
+grant all privileges on all sequences in schema public to service_role;
+grant all privileges on all functions in schema public to service_role;
+
+grant select, insert, update, delete on all tables in schema public to authenticated;
+grant select, insert                 on all tables in schema public to anon;

@@ -90,16 +90,30 @@ export async function callFunction(
   body: unknown,
   headers: Record<string, string> = {},
 ): Promise<{ status: number; json: any }> {
-  const res = await fetch(`${FUNCTIONS_URL}/${name}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      apikey: ANON_KEY,
-      Authorization: headers.Authorization ?? `Bearer ${ANON_KEY}`,
-      ...headers,
-    },
-    body: JSON.stringify(body),
-  });
-  const json = await res.json().catch(() => null);
-  return { status: res.status, json };
+  // O `supabase functions serve` local baixa/compila as dependências no PRIMEIRO
+  // acesso a cada função (cold start), o que pode estourar o wall-clock e devolver
+  // 503 (early termination). Isso é artefato do runtime local — nossas funções
+  // nunca respondem 503 — então tentamos de novo até o isolate esquentar.
+  const MAX_TENTATIVAS = 6;
+  let ultima: { status: number; json: any } = { status: 0, json: null };
+
+  for (let tentativa = 1; tentativa <= MAX_TENTATIVAS; tentativa++) {
+    const res = await fetch(`${FUNCTIONS_URL}/${name}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: ANON_KEY,
+        Authorization: headers.Authorization ?? `Bearer ${ANON_KEY}`,
+        ...headers,
+      },
+      body: JSON.stringify(body),
+    });
+    const json = await res.json().catch(() => null);
+    ultima = { status: res.status, json };
+
+    if (res.status !== 503) return ultima;
+    await new Promise((r) => setTimeout(r, 2000 * tentativa)); // backoff progressivo
+  }
+
+  return ultima;
 }

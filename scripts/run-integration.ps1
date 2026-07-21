@@ -34,9 +34,16 @@ $env:FUNCTIONS_URL             = "$($env:SUPABASE_URL)/functions/v1"
 $env:INTEGRATION               = "1"
 if (-not $env:SUPABASE_ANON_KEY) { throw "Não consegui ler as chaves do 'supabase status'." }
 
+# 1b. Reset do banco: reaplica TODAS as migrations + seed num estado limpo.
+# Garante que cada execução parte de um banco previsível (os testes usam números
+# de mesa fixos e colidiriam com dados de uma rodada anterior).
+Write-Host "==> supabase db reset (reaplica migrations + seed)..." -ForegroundColor Cyan
+npx --yes supabase db reset
+
 # 2. Serve as functions em segundo plano.
 Write-Host "==> servindo Edge Functions em background..." -ForegroundColor Cyan
-$serve = Start-Process -FilePath "npx" -ArgumentList "--yes supabase functions serve --no-verify-jwt=false" `
+# npx é um .cmd no Windows; Start-Process precisa de um .exe -> lançamos via cmd.exe.
+$serve = Start-Process -FilePath "cmd.exe" -ArgumentList "/c npx --yes supabase functions serve" `
          -PassThru -WindowStyle Hidden -RedirectStandardOutput "scripts\functions-serve.log" `
          -RedirectStandardError "scripts\functions-serve.err.log"
 
