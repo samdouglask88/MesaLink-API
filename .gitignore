@@ -1,0 +1,15 @@
+# Supabase
+supabase/.branches
+supabase/.temp
+supabase/.env
+.env
+.env.local
+
+# Deno
+.deno/
+
+# Editores / SO
+.DS_Store
+.idea/
+.vscode/
+*.log

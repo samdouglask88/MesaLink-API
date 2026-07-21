@@ -1,0 +1,49 @@
+# Configuração do projeto Supabase local.
+# Gerada manualmente para reproduzir o resultado de `supabase init`.
+
+project_id = "mesalink-api"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[inbucket]
+enabled = true
+port = 54324
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+enable_confirmations = false
+
+# --- Edge Functions ---------------------------------------------------------
+# criar-pedido e solicitar-fechamento são chamadas pelo dispositivo do cliente,
+# que se autentica pelo header x-comanda-token (não por um usuário do Auth),
+# por isso verify_jwt = false.
+# fechar-conta exige um usuário do Auth (papel caixa/admin), então verify_jwt = true.
+
+[functions.criar-pedido]
+verify_jwt = false
+
+[functions.solicitar-fechamento]
+verify_jwt = false
+
+[functions.fechar-conta]
+verify_jwt = true
