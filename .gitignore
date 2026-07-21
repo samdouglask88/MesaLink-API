@@ -8,6 +8,12 @@ supabase/.env
 # Deno
 .deno/
 
+# Cobertura de testes
+.coverage/
+
+# Logs gerados pelos scripts
+scripts/*.log
+
 # Editores / SO
 .DS_Store
 .idea/
